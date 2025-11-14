@@ -1,4 +1,9 @@
-# midi_export.py
+import mido
+
+mid = mido.MidiFile()
+track = mido.MidiTrack()
+...
+track.append(mido.MetaMessage('set_tempo', tempo=tempo))
 from mido import MidiFile, MidiTrack, Message
 
 def export_pattern(patterns, bpm, filename):
