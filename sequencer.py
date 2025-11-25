@@ -15,7 +15,7 @@ NOTE_MAP = {
 class Pattern:
     def __init__(self, steps=16):
         self.steps = steps
-        self.grid = [[False]*steps for _ in range(3)]  # Kick, Snare, Hat
+        self.grid = [[False]*steps for _ in range(3)]
 
     def to_text(self):
         rows = []

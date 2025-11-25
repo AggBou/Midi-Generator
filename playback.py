@@ -1,8 +1,7 @@
-# playback.py (WAV enabled)
 import time
 import threading
-from PyQt5.QtMultimedia import QSound
 import os
+import playsound3
 
 NOTE_KICK = 36
 NOTE_SNARE = 38
@@ -18,18 +17,27 @@ class MidiPlayer:
     def __init__(self):
         self.playing = False
         self.thread = None
+        self.samples = {}
+
+        # Store valid file paths
+        for note, path in SOUND_MAP.items():
+            if os.path.exists(path):
+                self.samples[note] = path
+            else:
+                print(f"Warning: sound file not found: {path}")
 
     def send_note(self, note):
-        path = SOUND_MAP.get(note)
-        if path and os.path.exists(path):
-            QSound.play(path)
+        path = self.samples.get(note)
+        if path:
+            # non-blocking playback
+            playsound3.playsound(path, block=False)
 
     def play_pattern(self, pattern, bpm):
         if self.playing:
             return
 
         self.playing = True
-        step_time = 60.0 / bpm / 4.0  # 16 steps per bar
+        step_time = 60.0 / bpm / 4.0
         steps = pattern.steps
         events = pattern.get_events()
 
@@ -38,7 +46,6 @@ class MidiPlayer:
                 for step in range(steps):
                     if not self.playing:
                         break
-                    # Play all notes in this step
                     for note, c in events:
                         if c == step:
                             self.send_note(note)

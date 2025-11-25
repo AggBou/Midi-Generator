@@ -56,9 +56,10 @@ def main():
         print('Not enough priviledge, restarting...')
         ctypes.windll.shell32.ShellExecuteW(
             None, 'runas', sys.executable, ' '.join(sys.argv), None, None)
+        sys.exit(app.exec_())
     else:
         print('Elevated privilege acquired')
-    sys.exit(app.exec_())
+
 
 
     
