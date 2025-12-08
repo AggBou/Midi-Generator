@@ -2,8 +2,8 @@
 import sys
 import ctypes
 import enum
-from PyQt5.QtWidgets import QApplication
-from gui import DrumGUI
+import flet as ft
+from gui import main as flet_main
 
 class SW(enum.IntEnum):
 
@@ -48,15 +48,12 @@ def bootstrap():
             raise RuntimeError(ERROR(hinstance))
 
 def main():
-    app = QApplication(sys.argv)
-    window = DrumGUI()
-    window.resize(800, 400)
-    window.show()    
+    ft.app(target=flet_main)
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not enough priviledge, restarting...')
         ctypes.windll.shell32.ShellExecuteW(
             None, 'runas', sys.executable, ' '.join(sys.argv), None, None)
-        sys.exit(app.exec_())
+        sys.exit()
     else:
         print('Elevated privilege acquired')
 
