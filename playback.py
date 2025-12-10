@@ -41,13 +41,17 @@ class MidiPlayer:
         steps = pattern.steps
         events = pattern.get_events()
 
+        print(step_time)
+
         def run():
             while self.playing:
                 for step in range(steps):
+                    
                     if not self.playing:
                         break
                     for note, c in events:
                         if c == step:
+                            print(f"Playing step {step}")
                             self.send_note(note)
                     time.sleep(step_time)
 
