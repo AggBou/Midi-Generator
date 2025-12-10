@@ -37,30 +37,15 @@ class ERROR(enum.IntEnum):
     OOM = 8
     SHARE = 26
 
-def bootstrap():
-    if ctypes.windll.shell32.IsUserAnAdmin():
-        main()
-    else:
+if __name__ == "__main__":
+    if not ctypes.windll.shell32.IsUserAnAdmin():
         hinstance = ctypes.windll.shell32.ShellExecuteW(
-            None, 'runas', sys.executable, sys.argv[0], None, SW.SHOWNORMAL
+            None, 'runas', sys.executable, ' '.join(sys.argv), None, SW.SHOWNORMAL
         )
         if hinstance <= 32:
             raise RuntimeError(ERROR(hinstance))
-
-def main():
-    ft.app(target=flet_main)
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        print('Not enough priviledge, restarting...')
-        ctypes.windll.shell32.ShellExecuteW(
-            None, 'runas', sys.executable, ' '.join(sys.argv), None, None)
         sys.exit()
-    else:
-        print('Elevated privilege acquired')
-
-
-
     
-if __name__ == "__main__":
-    main()
+    ft.app(target=flet_main)
 
 
