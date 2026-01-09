@@ -50,9 +50,12 @@ class DrumApp:
         self.settings_column = ft.Column(horizontal_alignment=ft.CrossAxisAlignment.START, expand=False, visible=False)
         self.grid_buttons = []
 
-        # Initialize file picker
-        self.file_picker = ft.FilePicker(on_result=self.on_file_pick_result)
-        self.page.overlay.append(self.file_picker)
+        # Delay creating FilePicker until it's actually needed. Some
+        # clients (web) don't support FilePicker and will raise an
+        # Unknown control error when the control is instantiated or
+        # rendered. We'll create it lazily in `pick_sound_file`.
+        self.file_picker = None
+        self.file_picker_supported = False
         
         # Theme toggle button
         theme_btn = ft.IconButton(
@@ -72,7 +75,7 @@ class DrumApp:
         self.step_selector = ft.Dropdown(
             options=[ft.dropdown.Option(str(s)) for s in self.steps_options],
             value=str(self.steps_options[0]),
-            on_change=self.change_steps,
+            on_select=self.change_steps,
             width=200,
             text_size=16
         )
@@ -83,7 +86,7 @@ class DrumApp:
         self.bpm_selector = ft.Dropdown(
             options=[ft.dropdown.Option(str(bpm)) for bpm in range(60, 201, 10)],
             value=str(self.bpm),
-            on_change=self.change_bpm,
+            on_select=self.change_bpm,
             width=200,
             text_size=16
         )
@@ -124,7 +127,7 @@ class DrumApp:
         header = ft.Row([ft.Text("Drum Sequencer", size=32, weight="bold"), ft.Container(expand=True), settings_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         self.page.add(header, ft.Container(
             content=main_row,
-            alignment=ft.alignment.center,
+            alignment=ft.alignment.Alignment.CENTER,
             expand=True,
             padding=20
         ))
@@ -219,7 +222,7 @@ class DrumApp:
                 options=options,
                 width=200,
                 text_size=12,
-                on_change=lambda e, st=sound_type, sf=sound_files: self.change_sound(st, e, sf)
+                on_select=lambda e, st=sound_type, sf=sound_files: self.change_sound(st, e, sf)
             )
             
             browse_btn = ft.ElevatedButton(
@@ -278,9 +281,34 @@ class DrumApp:
     def pick_sound_file(self, sound_type):
         """Open file picker to select sound file from PC"""
         self.current_sound_type = sound_type
-        self.file_picker.pick_files(allowed_extensions=["wav"])
+        # Try to create FilePicker lazily (may fail on unsupported clients)
+        if not self.file_picker and not self.file_picker_supported:
+            try:
+                self.file_picker = ft.FilePicker(on_upload=self.on_file_pick_result)
+                try:
+                    self.page.overlay.append(self.file_picker)
+                except Exception:
+                    # appending to overlay may fail on some clients
+                    pass
+                self.file_picker_supported = True
+            except Exception:
+                self.file_picker = None
+                self.file_picker_supported = False
 
-    def on_file_pick_result(self, e: ft.FilePickerResultEvent):
+        if self.file_picker_supported and self.file_picker:
+            try:
+                self.file_picker.pick_files(allowed_extensions=["wav"])
+            except Exception:
+                self.page.snack_bar = ft.SnackBar(ft.Text("File picker not available in this client."))
+                self.page.snack_bar.open = True
+                self.page.update()
+        else:
+            # Fallback: instruct user to place .wav files into the `sounds/` folder
+            self.page.snack_bar = ft.SnackBar(ft.Text("FilePicker not supported in this client. Place .wav files into the sounds/ folder and select them from the dropdown."))
+            self.page.snack_bar.open = True
+            self.page.update()
+
+    def on_file_pick_result(self, e):
         """Handle file picker result"""
         if e.files:
             file_path = e.files[0].path
@@ -362,4 +390,7 @@ class DrumApp:
 def main(page: ft.Page):
     DrumApp(page)
 
-ft.app(target=main)
+
+if __name__ == "__main__":
+    # When running gui.py directly, start a desktop Flet app.
+    ft.run(main, view=ft.AppView.FLET_APP)
