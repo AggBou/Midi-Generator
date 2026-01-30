@@ -2,6 +2,7 @@ import flet as ft
 from sequencer import Pattern
 from playback import MidiPlayer
 from midi_export import export_pattern
+from midi_import import import_pattern
 from presets import save_presets, load_presets
 from settings import SettingsWindow
 from settings_manager import load_settings, save_settings
@@ -83,12 +84,13 @@ class DrumApp:
         self.left_column.controls.append(self.step_selector)
 
         # BPM selector
-        self.bpm_selector = ft.Dropdown(
-            options=[ft.dropdown.Option(str(bpm)) for bpm in range(60, 201, 10)],
+        self.bpm_selector = ft.TextField(
             value=str(self.bpm),
-            on_select=self.change_bpm,
-            width=200,
-            text_size=16
+            on_change=self.change_bpm,
+            width=100,
+            text_size=16,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            text_align=ft.TextAlign.RIGHT
         )
         self.left_column.controls.append(ft.Text("BPM:", size=18, weight="bold"))
         self.left_column.controls.append(self.bpm_selector)
@@ -117,6 +119,7 @@ class DrumApp:
                 ft.ElevatedButton("Play", on_click=self.play_pattern, width=150, height=50),
                 ft.ElevatedButton("Stop", on_click=self.stop_pattern, width=150, height=50),
                 ft.ElevatedButton("Export MIDI", on_click=self.export_midi, width=150, height=50),
+                ft.ElevatedButton("Import MIDI", on_click=self.import_midi, width=150, height=50),
             ], alignment=ft.MainAxisAlignment.CENTER)
         )
 
@@ -350,7 +353,16 @@ class DrumApp:
         self.update_grid()
 
     def change_bpm(self, e):
-        self.bpm = int(e.control.value)
+        try:
+            val = int(e.control.value)
+            if val > 200:
+                val = 200
+                e.control.value = "200"
+                e.control.update()
+            
+            self.bpm = val
+        except ValueError:
+            pass # Keep previous BPM if invalid
 
     def random_pattern(self, _):
         self.current_pattern.generate_random()
@@ -406,6 +418,53 @@ class DrumApp:
             self.page.update()
         except Exception as e:
             self.page.snack_bar = ft.SnackBar(ft.Text(f"Export error: {type(e).__name__}: {e}"))
+            self.page.snack_bar.open = True
+            self.page.update()
+
+    def import_midi(self, _):
+        # Use native tkinter open dialog
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.update()
+            root.attributes('-topmost', True)
+            path = filedialog.askopenfilename(parent=root, filetypes=[("MIDI Files", "*.mid"), ("All Files", "*.*")], title="Import MIDI")
+            root.attributes('-topmost', False)
+            root.destroy()
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Import dialog failed: {type(e).__name__}: {e}"))
+            self.page.snack_bar.open = True
+            self.page.update()
+            return
+
+        if not path:
+            return
+
+        try:
+            pattern, bpm = import_pattern(path)
+            if pattern:
+                self.current_pattern = pattern
+                self.patterns = [self.current_pattern] # Replace patterns list for now
+                self.bpm = bpm
+                
+                # Update UI elements
+                self.bpm_selector.value = str(self.bpm)
+                self.step_selector.value = str(self.current_pattern.steps)
+                
+                # Refresh grid
+                self.update_grid()
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"Imported MIDI from {os.path.basename(path)}"))
+                self.page.snack_bar.open = True
+                self.page.update()
+            else:
+                self.page.snack_bar = ft.SnackBar(ft.Text("Failed to import MIDI pattern"))
+                self.page.snack_bar.open = True
+                self.page.update()
+
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Import error: {type(e).__name__}: {e}"))
             self.page.snack_bar.open = True
             self.page.update()
 
