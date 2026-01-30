@@ -4,6 +4,9 @@ from pathlib import Path
 
 SETTINGS_FILE = "app_settings.json"
 
+# Base dir for resources
+_BASE_DIR = os.path.dirname(__file__)
+
 def save_settings(dark_mode, sound_paths):
     """Save settings to file"""
     settings = {
@@ -19,9 +22,9 @@ def load_settings():
         return {
             "dark_mode": True,
             "sound_paths": {
-                36: "sounds/kick.wav",   # NOTE_KICK
-                38: "sounds/snare.wav",  # NOTE_SNARE
-                42: "sounds/hihat.wav"   # NOTE_HH
+                36: os.path.join(_BASE_DIR, "sounds", "kick.wav"),   # NOTE_KICK
+                38: os.path.join(_BASE_DIR, "sounds", "snare.wav"),  # NOTE_SNARE
+                42: os.path.join(_BASE_DIR, "sounds", "hihat.wav")   # NOTE_HH
             }
         }
     
@@ -33,8 +36,8 @@ def load_settings():
         return {
             "dark_mode": True,
             "sound_paths": {
-                36: "sounds/kick.wav",
-                38: "sounds/snare.wav",
-                42: "sounds/hihat.wav"
+                36: os.path.join(_BASE_DIR, "sounds", "kick.wav"),
+                38: os.path.join(_BASE_DIR, "sounds", "snare.wav"),
+                42: os.path.join(_BASE_DIR, "sounds", "hihat.wav")
             }
         }

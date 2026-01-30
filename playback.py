@@ -7,10 +7,13 @@ NOTE_KICK = 36
 NOTE_SNARE = 38
 NOTE_HH = 42
 
+# Use absolute paths relative to this module so sounds are found regardless
+# of the current working directory when the app is launched.
+_BASE_DIR = os.path.dirname(__file__)
 SOUND_MAP = {
-    NOTE_KICK: "sounds/kick.wav",
-    NOTE_SNARE: "sounds/snare.wav",
-    NOTE_HH: "sounds/hihat.wav"
+    NOTE_KICK: os.path.join(_BASE_DIR, "sounds", "kick.wav"),
+    NOTE_SNARE: os.path.join(_BASE_DIR, "sounds", "snare.wav"),
+    NOTE_HH: os.path.join(_BASE_DIR, "sounds", "hihat.wav")
 }
 
 class MidiPlayer:

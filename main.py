@@ -32,26 +32,16 @@ class ERROR(enum.IntEnum):
     ASSOC_INCOMPLETE = 27
     DDE_BUSY = 30
     DDE_FAIL = 29
-    DDE_TαIMEOUT = 28
+    DDE_TIMEOUT = 28
     DLL_NOT_FOUND = 32
     NO_ASSOC = 31
     OOM = 8
     SHARE = 26
 
 if __name__ == "__main__":
-    # Allow skipping Windows elevation during development with:
-    #  - CLI flag: --no-elevate
-    #  - Env var: NO_ELEVATE=1
-    skip_elevate = ("--no-elevate" in sys.argv) or (os.environ.get("NO_ELEVATE") == "1")
-
-    if not skip_elevate:
-        if not ctypes.windll.shell32.IsUserAnAdmin():
-            hinstance = ctypes.windll.shell32.ShellExecuteW(
-                None, 'runas', sys.executable, ' '.join(sys.argv), None, SW.SHOWNORMAL
-            )
-            if hinstance <= 32:
-                raise RuntimeError(ERROR(hinstance))
-            sys.exit()
+    # Elevation removed: the app will no longer relaunch as admin.
+    # If you need admin privileges later, handle them in specific routines.
+    skip_elevate = True
 
     # Ensure Flet launches in the desktop Flet App view so desktop-only
     # controls like FilePicker are available in the client.

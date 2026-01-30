@@ -100,6 +100,7 @@ class DrumApp:
             ft.ElevatedButton("Generate Fill", on_click=self.generate_fill, width=250, height=50),
             ft.ElevatedButton("Save Presets", on_click=self.save_presets, width=250, height=50),
             ft.ElevatedButton("Load Presets", on_click=self.load_presets, width=250, height=50),
+            ft.ElevatedButton("Clear All", on_click=self.clear_all, width=250, height=50),
         ])
 
         # Grid and text area
@@ -370,11 +371,48 @@ class DrumApp:
         self.player.stop()
 
     def export_midi(self, _):
-        fname = ft.dialogs.save_file_dialog("Export MIDI", "MIDI Files (*.mid)")
-        if fname:
-            if not fname.endswith(".mid"):
-                fname += ".mid"
-            export_pattern([self.current_pattern], self.bpm, fname)
+        # Use native tkinter save dialog (Windows File Explorer style) to
+        # ensure a visible save dialog opens for the user. This avoids
+        # client-specific `ft.dialogs` behavior.
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            # Hide the root window but make the dialog topmost so it appears
+            # in front of other windows (File Explorer / other apps).
+            root.withdraw()
+            root.update()
+            root.attributes('-topmost', True)
+            path = filedialog.asksaveasfilename(parent=root, defaultextension=".mid", filetypes=[("MIDI Files", "*.mid")], title="Export MIDI")
+            root.attributes('-topmost', False)
+            root.destroy()
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Export dialog failed: {type(e).__name__}: {e}"))
+            self.page.snack_bar.open = True
+            self.page.update()
+            return
+
+        if not path:
+            # user canceled
+            return
+
+        if not path.endswith('.mid'):
+            path += '.mid'
+
+        try:
+            export_pattern([self.current_pattern], self.bpm, path)
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Exported MIDI to {os.path.basename(path)}"))
+            self.page.snack_bar.open = True
+            self.page.update()
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Export error: {type(e).__name__}: {e}"))
+            self.page.snack_bar.open = True
+            self.page.update()
+
+    def clear_all(self, _):
+        # Clear all steps in the current pattern and refresh UI
+        self.current_pattern.grid = [[False] * self.current_pattern.steps for _ in range(3)]
+        self.update_grid()
 
     def save_presets(self, _):
         save_presets(self.patterns)
